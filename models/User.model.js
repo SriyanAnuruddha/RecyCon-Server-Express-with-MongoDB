@@ -27,6 +27,10 @@ const UserSchema = mongoose.Schema(
             type: String,
             required: [true, "Please enter password"]
         },
+        accountType: {
+            type: String,
+            required: [true, "Please enter password"]
+        }
 
     },
     {
