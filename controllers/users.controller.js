@@ -1,7 +1,6 @@
 const UserSchema = require('../models/User.model')
 const bcrypt = require('bcrypt')
 const { createToken } = require('../middleware/JWT')
-const { use } = require('../routes/users.route')
 
 
 exports.registerUser = async (req, res, next) => {
@@ -20,7 +19,7 @@ exports.registerUser = async (req, res, next) => {
 
         const token = createToken(storedUserObj) // create the JWT token
 
-        if (storedUserObj) {
+        if (storedUserObj && token) {
             res.status(200).json({
                 user: {
                     user_id: storedUserObj._id.toString(),
@@ -44,6 +43,10 @@ exports.userLogin = async (req, res, next) => {
     try {
         const { email, password } = req.body
 
+        if (!email || !password) {
+            return res.status(500).send("email or password is missing!")
+        }
+
         const user = await UserSchema.findOne({ "email": email })
 
         if (!user) {
@@ -56,8 +59,10 @@ exports.userLogin = async (req, res, next) => {
                 res.status(400).json({ error: "username or password is wrong!" })
             } else {
                 const accessToken = createToken(user) // Create the JWT token for the user
+
                 res.status(200).json({
                     user: {
+                        user_id: user._id.toString(),
                         firstName: user.firstName,
                         lastName: user.lastName,
                         email: user.email,

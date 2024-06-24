@@ -2,6 +2,7 @@ const configs = require('./config/configs') // import configurations
 const express = require('express')
 const mongoose = require('mongoose')
 const usersRoutes = require('./routes/users.route')
+const sellersRoute = require('./routes/sellers.route')
 const { PORT, DB_URI } = configs
 
 // import middlewares
@@ -12,6 +13,7 @@ app.use(cors())
 app.use(express.json())
 
 app.use('/users', usersRoutes)
+app.use('/sellers', sellersRoute)
 
 mongoose.connect(DB_URI).then(
     () => {

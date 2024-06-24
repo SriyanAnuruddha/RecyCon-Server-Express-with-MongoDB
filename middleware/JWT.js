@@ -11,13 +11,14 @@ const createToken = (user) => {
 }
 
 const validateToken = (req, res, next) => {
-    const accessToken = req.headers.authorization.split(" ")[1]
 
-    if (!accessToken) {
-        return res.status(400).json({ error: "user is not authenticated!" })
-    }
+    // if (accessToken) {
+    //     return res.status(400).json({ error: "user is not authenticated!" })
+    // }
 
     try {
+        const accessToken = req.headers.authorization.split(" ")[1]
+
         const decodedToken = verify(accessToken, "thisIsMySecret") // decode the JWT token
         if (decodedToken) {
             req.user_id = decodedToken.user_id
@@ -27,8 +28,13 @@ const validateToken = (req, res, next) => {
             req.accountType = decodedToken.accountType
             return next() // call next() to move forward when we have nothing left to do
         }
-    } catch (e) {
-        return res.status(400).json({ error: "server token error" })
+    } catch (error) {
+        if (error instanceof TypeError) {
+            return res.status(400).json({ error: "user is not authenticated!" })
+        } else {
+            return res.status(400).json({ error: "server token error" })
+        }
+
     }
 }
 
