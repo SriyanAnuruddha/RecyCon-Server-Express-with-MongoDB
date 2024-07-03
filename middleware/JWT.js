@@ -12,10 +12,6 @@ const createToken = (user) => {
 
 const validateToken = (req, res, next) => {
 
-    // if (accessToken) {
-    //     return res.status(400).json({ error: "user is not authenticated!" })
-    // }
-
     try {
         const accessToken = req.headers.authorization.split(" ")[1]
 
