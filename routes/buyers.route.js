@@ -8,5 +8,6 @@ router.use(validateToken)
 router.get('/search-items', buyerController.searchItems)
 router.get('/new-items', buyerController.newItems)
 router.get('/filtered-items', buyerController.filteredItems)
+router.get('/get-item', buyerController.getItem)
 
 module.exports = router

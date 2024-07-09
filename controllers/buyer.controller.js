@@ -76,3 +76,19 @@ exports.filteredItems = async (req, res) => {
         return res.status(500).json({ message: "Internal server error" });
     }
 }
+
+exports.getItem = async (req, res) => {
+    const itemID = req.query.itemID
+
+    const item = await ItemSchema.findOne({ "_id": itemID })
+
+    if (item) {
+        const itemObj = item.toObject()
+        const image = getImage(item.image_file_name)
+        const itemWithImage = { ...itemObj, image_file_name: image }
+
+        res.status(200).json(itemWithImage)
+    } else {
+        res.status(404).json({ message: "can't find the item" })
+    }
+}
