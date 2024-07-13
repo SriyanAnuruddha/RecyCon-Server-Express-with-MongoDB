@@ -22,6 +22,7 @@ const upload = multer({ storage: storage })
 router.use(validateToken)
 
 router.post('/addItems', upload.single('file'), sellerController.addItem)
-
+router.get('/get-all-transactions', sellerController.allTransactions)
+router.delete('/reject-order-request', sellerController.rejectOrderRequest)
 
 module.exports = router

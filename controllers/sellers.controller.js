@@ -1,4 +1,6 @@
 const ItemSchema = require('../models/Item.model');
+const TransactionSchema = require("../models/Transaction.model")
+const getImage = require("../utils/getImage")
 
 exports.addItem = async (req, res, next) => {
     const { name, description, metric, quantity, price, category } = req.body;
@@ -39,3 +41,47 @@ exports.addItem = async (req, res, next) => {
         console.error(e);
     }
 };
+
+
+exports.allTransactions = async (req, res) => {
+    const sellerID = req.query.sellerID;
+
+    try {
+        const transactions = await TransactionSchema.find({ "sellerID": sellerID });
+
+        const transactions_with_extra_data = await Promise.all(transactions.map(async (transaction) => {
+            const transactionObj = transaction.toObject();
+            const item = await ItemSchema.findOne({ "_id": transactionObj.itemID });
+            const image = getImage(item.image_file_name);
+
+            return {
+                transactionID: transactionObj._id,
+                item_name: item.name,
+                image: image,
+                quantity: transactionObj.requested_quantity,
+                amount: transactionObj.amount,
+                status: transactionObj.status,
+                created_date: transactionObj.createdAt
+            };
+        }));
+
+
+        res.status(200).json(transactions_with_extra_data);
+    } catch (e) {
+        console.error(e)
+        res.status(404).json({ message: "can't retrieve transaction data now!" });
+    }
+}
+
+
+exports.rejectOrderRequest = async (req, res) => {
+    const transactionID = req.query.transactionID
+
+    try {
+        await TransactionSchema.deleteOne({ "_id": transactionID })
+
+        res.status(200).json({ message: "sucessfully deleted order!" })
+    } catch (e) {
+        res.status(400).json({ message: "cant deleted order!" })
+    }
+}
