@@ -4,7 +4,7 @@ const fs = require('fs')
 const path = require('path')
 const TransactionSchema = require("../models/Transaction.model")
 const getImage = require("../utils/getImage")
-
+const UserSchema = require("../models/User.model")
 
 exports.searchItems = (req, res) => {
     res.status(200).json("items")
@@ -71,9 +71,10 @@ exports.getItem = async (req, res) => {
 
     if (item) {
         const itemObj = item.toObject()
+        const userObj = await UserSchema.findOne({ "_id": itemObj.seller_id })
+        const sellerName = `${userObj.firstName} ${userObj.lastName}`
         const image = getImage(item.image_file_name)
-        const itemWithImage = { ...itemObj, image_file_name: image }
-
+        const itemWithImage = { ...itemObj, image_file_name: image, sellerName: sellerName }
         res.status(200).json(itemWithImage)
     } else {
         res.status(404).json({ message: "can't find the item" })

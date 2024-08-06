@@ -1,6 +1,7 @@
 const ItemSchema = require('../models/Item.model');
 const TransactionSchema = require("../models/Transaction.model")
 const getImage = require("../utils/getImage")
+const UserSchema = require("../models/User.model")
 
 exports.addItem = async (req, res, next) => {
     const { name, description, metric, quantity, price, category } = req.body;
@@ -53,6 +54,8 @@ exports.allTransactions = async (req, res) => {
             const transactionObj = transaction.toObject();
             const item = await ItemSchema.findOne({ "_id": transactionObj.itemID });
             const image = getImage(item.image_file_name);
+            const userObj = await UserSchema.findOne({ "_id": transactionObj.buyerID })
+            const buyerName = `${userObj.firstName} ${userObj.lastName}`
 
             return {
                 transactionID: transactionObj._id,
@@ -61,7 +64,9 @@ exports.allTransactions = async (req, res) => {
                 quantity: transactionObj.requested_quantity,
                 amount: transactionObj.amount,
                 status: transactionObj.status,
-                created_date: transactionObj.createdAt
+                created_date: transactionObj.createdAt,
+                buyerName: buyerName,
+                buyerID: transactionObj.buyerID
             };
         }));
 
