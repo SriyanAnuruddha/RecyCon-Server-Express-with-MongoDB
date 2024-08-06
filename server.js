@@ -48,9 +48,61 @@ app.get('/messages', validateToken, async (req, res) => {
     }
 });
 
-app.get("/hello", (req, res) => {
-    res.send("hello")
-})
+
+
+app.get('/chatlist', validateToken, async (req, res) => {
+    const { user_id } = req;
+    console.log(user_id);
+
+    if (!user_id) {
+        return res.status(400).json({ error: "Invalid user ID" });
+    }
+
+    try {
+        const messages = await MessageSchema.aggregate([
+            {
+                $match: {
+                    $or: [
+                        { senderId: user_id },
+                        { receiverId: user_id }
+                    ]
+                }
+            },
+            {
+                $sort: { createdAt: -1 }
+            },
+            {
+                $group: {
+                    _id: {
+                        $cond: [
+                            { $eq: ["$senderId", user_id] },
+                            "$receiverId",
+                            "$senderId"
+                        ]
+                    },
+                    lastMessage: { $first: "$$ROOT" }
+                }
+            },
+            {
+                $project: {
+                    _id: 0,
+                    otherPartyId: "$_id",
+                    lastMessage: {
+                        senderId: "$lastMessage.senderId",
+                        receiverId: "$lastMessage.receiverId",
+                        content: "$lastMessage.content",
+                        createdAt: "$lastMessage.createdAt"
+                    }
+                }
+            }
+        ]);
+
+        res.json(messages);
+    } catch (e) {
+        console.error('Error fetching messages:', e);
+        res.status(500).json({ error: "Failed to retrieve messages" });
+    }
+});
 
 
 // Socket.io event handlers
