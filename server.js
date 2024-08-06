@@ -13,6 +13,8 @@ const MessageSchema = require('./models/Message.model');
 const usersRoutes = require('./routes/users.route');
 const sellersRoute = require('./routes/sellers.route');
 const buyersRoute = require('./routes/buyers.route');
+const UserSchema = require('./models/User.model');
+
 
 const app = express();
 app.use(cors());
@@ -52,7 +54,6 @@ app.get('/messages', validateToken, async (req, res) => {
 
 app.get('/chatlist', validateToken, async (req, res) => {
     const { user_id } = req;
-    console.log(user_id);
 
     if (!user_id) {
         return res.status(400).json({ error: "Invalid user ID" });
@@ -97,7 +98,15 @@ app.get('/chatlist', validateToken, async (req, res) => {
             }
         ]);
 
-        res.json(messages);
+        const withNames = await Promise.all(messages.map(async (message) => {
+            const user = await UserSchema.findOne({ "_id": message.otherPartyId });
+            if (!user) return { ...message, otherPartyName: "Unknown" };
+            const userObj = user.toObject();
+            const userName = `${userObj.firstName} ${userObj.lastName}`;
+            return { ...message, otherPartyName: userName };
+        }));
+
+        res.json(withNames);
     } catch (e) {
         console.error('Error fetching messages:', e);
         res.status(500).json({ error: "Failed to retrieve messages" });
