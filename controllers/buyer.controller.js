@@ -128,9 +128,13 @@ exports.allTransactions = async (req, res) => {
             const transactionObj = transaction.toObject();
             const item = await ItemSchema.findOne({ "_id": transactionObj.itemID });
             const image = getImage(item.image_file_name);
+            const user = await UserSchema.findOne({ "_id": transactionObj.sellerID });
+            const userObj = user.toObject()
 
             return {
                 transactionID: transactionObj._id,
+                sellerID: item.seller_id,
+                sellerName: `${userObj.firstName} ${userObj.lastName}`,
                 item_name: item.name,
                 image: image,
                 quantity: transactionObj.requested_quantity,

@@ -24,5 +24,8 @@ router.use(validateToken)
 router.post('/addItems', upload.single('file'), sellerController.addItem)
 router.get('/get-all-transactions', sellerController.allTransactions)
 router.delete('/reject-order-request', sellerController.rejectOrderRequest)
+router.get('/get-items', sellerController.getItems)
+router.delete('/delete-item', sellerController.deleteItem)
+router.put('/update-item', upload.single('file'), sellerController.updateItem)
 
 module.exports = router

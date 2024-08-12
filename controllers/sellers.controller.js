@@ -9,19 +9,6 @@ exports.addItem = async (req, res, next) => {
         const { filename } = req.file;
         const seller_id = req.user_id;
 
-        console.log({
-            name,
-            description,
-            seller_id,
-            quantity_details: {
-                metric,
-                quantity
-            },
-            category,
-            price,
-            image_file_name: filename
-        });
-
         const item = await ItemSchema.create({
             name,
             description,
@@ -90,3 +77,65 @@ exports.rejectOrderRequest = async (req, res) => {
         res.status(400).json({ message: "cant deleted order!" })
     }
 }
+
+exports.getItems = async (req, res) => {
+    try {
+        const items = await ItemSchema.find()
+
+        const itemsWithImages = items.map(item => {
+            const itemObj = item.toObject()
+            const image = getImage(item.image_file_name)
+            return ({ ...itemObj, image: image })
+        })
+
+        return res.status(200).json(itemsWithImages)
+    } catch (e) {
+        return res.status(400).json({ message: "cant retrive items!" })
+    }
+}
+
+
+exports.deleteItem = async (req, res) => {
+    const itemID = req.query.itemID
+
+    try {
+        await ItemSchema.deleteOne({ "_id": itemID })
+
+        res.status(200).json({ message: "sucessfully deleted item!" })
+    } catch (e) {
+        res.status(400).json({ message: "cant deleted item!" })
+    }
+}
+
+
+exports.updateItem = async (req, res, next) => {
+    const { itemID, name, description, metric, quantity, price, category } = req.body;
+    try {
+        const filter = { _id: itemID };
+
+        let update = {
+            name,
+            description,
+            quantity_details: {
+                metric,
+                quantity
+            },
+            category,
+            price,
+        };
+
+        if (req.file) {
+            update = { ...update, image_file_name: req.file.filename }
+        }
+
+        const doc = await ItemSchema.findOneAndUpdate(filter, update)
+
+        if (doc) {
+            res.status(200).json("Item details updated successfully!");
+        }
+
+    } catch (e) {
+        res.status(400).json("Server error, can't update item details");
+        console.error(e);
+    }
+};
