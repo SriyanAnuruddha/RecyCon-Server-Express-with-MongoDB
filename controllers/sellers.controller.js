@@ -139,3 +139,45 @@ exports.updateItem = async (req, res, next) => {
         console.error(e);
     }
 };
+
+exports.currentPrices = async (req, res) => {
+    const category = req.query.category;
+    try {
+        const transactions = await TransactionSchema.find();
+
+        const transactionsWithDetails = await Promise.all(transactions.map(async (transaction) => {
+            const transactionObj = transaction.toObject();
+            const itemID = transactionObj.itemID.toString();
+
+            let itemDetails = null;
+            if (category) {
+                itemDetails = await ItemSchema.findOne({ "_id": itemID, "category": category });
+            } else {
+                itemDetails = await ItemSchema.findOne({ "_id": itemID });
+            }
+
+            if (!itemDetails) {
+                return null; // Or handle it in a way that suits your application
+            }
+
+            const itemDetailsObj = itemDetails.toObject();
+            const image = getImage(itemDetailsObj.image_file_name);
+
+            const itemWithImage = {
+                transaction_id: transactionObj._id,
+                ...itemDetailsObj,
+                image: image
+            };
+
+            return itemWithImage;
+        }));
+
+        // Filter out any null results before sending the response
+        const filteredTransactions = transactionsWithDetails.filter(item => item !== null);
+
+        return res.status(200).json(filteredTransactions);
+    } catch (e) {
+        console.error(e);
+        return res.status(500).json({ error: 'Internal Server Error' });
+    }
+};
