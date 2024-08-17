@@ -28,5 +28,6 @@ router.get('/get-items', sellerController.getItems)
 router.delete('/delete-item', sellerController.deleteItem)
 router.put('/update-item', upload.single('file'), sellerController.updateItem)
 router.get('/get-current-prices', sellerController.currentPrices)
+router.put('/accept-order-request', sellerController.acceptRequest)
 
 module.exports = router

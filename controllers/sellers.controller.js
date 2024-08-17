@@ -181,3 +181,21 @@ exports.currentPrices = async (req, res) => {
         return res.status(500).json({ error: 'Internal Server Error' });
     }
 };
+
+
+exports.acceptRequest = async (req, res) => {
+
+    const filter = { "_id": req.query.transactionID }
+    const update = { "status": "accepted" }
+
+    try {
+        const doc = await TransactionSchema.findOneAndUpdate(filter, update)
+
+        if (doc) {
+            res.status(200).json("order request accepted successfully!")
+        }
+    } catch (e) {
+        console.error(e)
+        res.status(400).json({ error: "server error! can't accept order request now" })
+    }
+}
