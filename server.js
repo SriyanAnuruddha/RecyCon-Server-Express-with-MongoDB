@@ -120,17 +120,14 @@ io.on('connection', (socket) => {
         console.log(`User connected: ${socket.user.firstName} ${socket.user.lastName}`);
         socket.join(socket.user.user_id);
 
-        socket.on('sendMessage', async ({ receiverId, content }) => {
+        socket.on('sendMessage', async ({ receiverId, content, location }) => {
             const message = new MessageSchema({
                 senderId: socket.user.user_id,
                 receiverId,
-                content
+                content,
+                location: { latitude: location?.latitude, longitude: location?.longitud }
             });
-
-            console.log(content)
-
             try {
-                console.log(message)
                 await message.save();
                 io.to(receiverId).emit('receiveMessage', message);
             } catch (error) {
