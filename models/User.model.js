@@ -1,5 +1,6 @@
-const mongoose = require('mongoose')
+const mongoose = require('mongoose');
 
+// Define the UserSchema
 const UserSchema = mongoose.Schema(
     {
         firstName: {
@@ -19,25 +20,35 @@ const UserSchema = mongoose.Schema(
             type: String,
             required: [true, "Please enter country"]
         },
-        city: {
-            type: String,
-            required: [true, "Please enter city"]
-        },
         password: {
             type: String,
             required: [true, "Please enter password"]
         },
         accountType: {
             type: String,
-            required: [true, "Please enter password"]
+            required: [true, "Please enter account type"]
+        },
+        location: {
+            type: {
+                type: String,
+                enum: ['Point'], // The only type supported is "Point"
+                required: true
+            },
+            coordinates: {
+                type: [Number], // [longitude, latitude]
+                required: true
+            }
         }
-
     },
     {
         timestamps: true
     }
-)
+);
 
-const User = mongoose.model('User', UserSchema)
+// Create a 2dsphere index on the location field
+UserSchema.index({ location: '2dsphere' });
 
-module.exports = User
+// Create the User model
+const User = mongoose.model('User', UserSchema);
+
+module.exports = User;

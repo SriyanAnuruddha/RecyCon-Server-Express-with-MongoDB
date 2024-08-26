@@ -6,14 +6,20 @@ const { createToken } = require('../middleware/JWT')
 exports.registerUser = async (req, res, next) => {
 
     try {
-        const { firstName, lastName, email, country, city, password, accountType } = req.body
+        const { firstName, lastName, email, country, city, password, accountType, coords } = req.body
+
         const user = await UserSchema.findOne({ 'email': email }) // get the user details 
         if (user) {
             return res.status(400).json({ error: "this email is already been used" })
         }
 
         const hashedPassword = await bcrypt.hash(password, 10) // hash the password
-        await UserSchema.create({ firstName, lastName, email, country, city, password: hashedPassword, accountType }) // store the user details in DB
+        await UserSchema.create({
+            firstName, lastName, email, country, password: hashedPassword, accountType, location: {
+                type: "Point",
+                coordinates: [coords.longitude, coords.latitude] // [longitude, latitude]
+            }
+        }) // store the user details in DB
 
         const storedUserObj = await UserSchema.findOne({ 'email': email })
 
@@ -27,6 +33,7 @@ exports.registerUser = async (req, res, next) => {
                     lastName: storedUserObj.lastName,
                     email: storedUserObj.email,
                     accountType: storedUserObj.accountType,
+                    country: storedUserObj.country
                 },
                 JWT_Token: token
             })
@@ -67,6 +74,7 @@ exports.userLogin = async (req, res, next) => {
                         lastName: user.lastName,
                         email: user.email,
                         accountType: user.accountType,
+                        country: user.country
                     },
                     JWT_Token: accessToken
 

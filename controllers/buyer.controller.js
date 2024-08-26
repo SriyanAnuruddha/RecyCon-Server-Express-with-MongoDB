@@ -1,44 +1,96 @@
 const { error } = require("console")
 const ItemSchema = require("../models/Item.model")
+const UserSchema = require("../models/User.model")
 const fs = require('fs')
 const path = require('path')
 const TransactionSchema = require("../models/Transaction.model")
 const getImage = require("../utils/getImage")
-const UserSchema = require("../models/User.model")
 
 exports.searchItems = (req, res) => {
     res.status(200).json("items")
 }
 
+
 exports.newItems = async (req, res) => {
     try {
-        const items = await ItemSchema.find().sort({ "createdAt": -1 })
+        const { country, coords } = req.query;
+        const { latitude, longitude } = coords;
 
+        if (!country || !latitude || !longitude) {
+            return res.status(400).json("Country and coordinates (latitude and longitude) are required.");
+        }
+
+        // Find users in the specified country and near the given coordinates
+        const users = await UserSchema.find({
+            country: country,
+            location: {
+                $near: {
+                    $geometry: {
+                        type: "Point",
+                        coordinates: [longitude, latitude]
+                    },
+                    $maxDistance: 10000 // Optional: max distance in meters
+                }
+            }
+        }).exec();
+
+        // Extract user IDs
+        const userIds = users.map(user => user._id);
+
+        // Find items posted by these users
+        const items = await ItemSchema.find({
+            seller_id: { $in: userIds }
+        }).sort({ "createdAt": -1 }).exec();
+
+        // Add images to the items
         const itemsWithImages = items.map(item => {
-            const itemObj = item.toObject()
-            const image = getImage(item.image_file_name)
-            return (
-                { ...itemObj, image_file_name: image }
-            )
-        })
+            const itemObj = item.toObject();
+            const image = getImage(item.image_file_name);
+            return { ...itemObj, image_file_name: image };
+        });
 
-        res.status(200).json(itemsWithImages)
+        res.status(200).json(itemsWithImages);
 
     } catch (e) {
-        res.status(404).json("server error: can't get new items from server")
+        console.error(e);
+        res.status(500).json("Server error: can't get new items from server");
     }
-}
+};
 
 exports.filteredItems = async (req, res) => {
-    const category = req.query.category
-    const itemName = req.query.itemName
+    const { category, itemName, country, coords } = req.query;
 
     if (!category && !itemName) {
-        res.status(400).json({ message: "please select a category or enter item name" })
+        return res.status(400).json({ message: "Please select a category or enter an item name" });
+    }
+
+    if (!country || !coords || !coords.latitude || !coords.longitude) {
+        return res.status(400).json({ message: "Country and coordinates (latitude and longitude) are required" });
     }
 
     try {
-        const query = {};
+        // Find users in the specified country and near the given coordinates
+        const users = await UserSchema.find({
+            country: country,
+            location: {
+                $near: {
+                    $geometry: {
+                        type: "Point",
+                        coordinates: [coords.longitude, coords.latitude]
+                    },
+                    $maxDistance: 10000 // Optional: max distance in meters
+                }
+            }
+        }).exec();
+
+        // Extract user IDs
+        const userIds = users.map(user => user._id);
+
+        // Build the item query
+        const query = {
+            seller_id: { $in: userIds } // Filter items by the found user IDs
+        };
+
         if (category) {
             query.category = category;
         }
@@ -47,22 +99,23 @@ exports.filteredItems = async (req, res) => {
             query.name = { $regex: itemName, $options: 'i' }; // Text search
         }
 
+        // Find items based on the query
         const items = await ItemSchema.find(query);
 
+        // Add images to the items
         const itemsWithImages = items.map(item => {
-            const itemObj = item.toObject()
-            const image = getImage(item.image_file_name)
-            return (
-                { ...itemObj, image_file_name: image }
-            )
-        })
+            const itemObj = item.toObject();
+            const image = getImage(item.image_file_name);
+            return { ...itemObj, image_file_name: image };
+        });
 
         return res.status(200).json(itemsWithImages);
     } catch (error) {
         console.error(error);
         return res.status(500).json({ message: "Internal server error" });
     }
-}
+};
+
 
 exports.getItem = async (req, res) => {
     const itemID = req.query.itemID
