@@ -60,10 +60,12 @@ exports.newItems = async (req, res) => {
 exports.filteredItems = async (req, res) => {
     const { category, itemName, country, coords } = req.query;
 
+    // Check if either category or itemName is provided
     if (!category && !itemName) {
         return res.status(400).json({ message: "Please select a category or enter an item name" });
     }
 
+    // Check for country and coordinates
     if (!country || !coords || !coords.latitude || !coords.longitude) {
         return res.status(400).json({ message: "Country and coordinates (latitude and longitude) are required" });
     }
@@ -91,10 +93,12 @@ exports.filteredItems = async (req, res) => {
             seller_id: { $in: userIds } // Filter items by the found user IDs
         };
 
+        // Include category in the query if provided
         if (category) {
             query.category = category;
         }
 
+        // Include itemName in the query if provided
         if (itemName) {
             query.name = { $regex: itemName, $options: 'i' }; // Text search
         }
