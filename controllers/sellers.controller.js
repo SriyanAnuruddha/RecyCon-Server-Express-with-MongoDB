@@ -80,7 +80,7 @@ exports.rejectOrderRequest = async (req, res) => {
 
 exports.getItems = async (req, res) => {
     try {
-        const items = await ItemSchema.find()
+        const items = await ItemSchema.find({ "seller_id": req.user_id })
 
         const itemsWithImages = items.map(item => {
             const itemObj = item.toObject()
