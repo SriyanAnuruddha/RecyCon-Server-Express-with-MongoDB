@@ -122,21 +122,35 @@ exports.filteredItems = async (req, res) => {
 
 
 exports.getItem = async (req, res) => {
-    const itemID = req.query.itemID
+    const itemID = req.query.itemID;
 
-    const item = await ItemSchema.findOne({ "_id": itemID })
+    try {
+        const item = await ItemSchema.findOne({ "_id": itemID });
 
-    if (item) {
-        const itemObj = item.toObject()
-        const userObj = await UserSchema.findOne({ "_id": itemObj.seller_id })
-        const sellerName = `${userObj.firstName} ${userObj.lastName}`
-        const image = getImage(item.image_file_name)
-        const itemWithImage = { ...itemObj, image_file_name: image, sellerName: sellerName }
-        res.status(200).json(itemWithImage)
-    } else {
-        res.status(404).json({ message: "can't find the item" })
+        if (!item) {
+            return res.status(404).json({ message: "Item not found" });
+        }
+
+        const userObj = await UserSchema.findOne({ "_id": item.seller_id });
+
+        if (!userObj) {
+            return res.status(404).json({ message: "Seller not found" });
+        }
+
+        const sellerName = `${userObj.firstName} ${userObj.lastName}`;
+        const image = getImage(item.image_file_name);
+        const itemWithImage = {
+            ...item.toObject(),
+            image_file_name: image,
+            sellerName: sellerName
+        };
+
+        return res.status(200).json(itemWithImage);
+    } catch (e) {
+        console.error(e);
+        return res.status(500).json({ message: "Server error: unable to retrieve item details" });
     }
-}
+};
 
 exports.newTransaction = async (req, res) => {
     const sellerID = req.body.sellerID

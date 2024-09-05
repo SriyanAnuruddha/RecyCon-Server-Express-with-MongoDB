@@ -48,45 +48,43 @@ exports.registerUser = async (req, res, next) => {
 
 exports.userLogin = async (req, res, next) => {
     try {
-        const { email, password } = req.body
+        const { email, password } = req.body;
 
         if (!email || !password) {
-            return res.status(500).send("email or password is missing!")
+            return res.status(400).send("Email or password is missing!");
         }
 
-        const user = await UserSchema.findOne({ "email": email })
+        const user = await UserSchema.findOne({ email });
 
         if (!user) {
-            res.status(404).send("username or password is wrong!")
+            return res.status(404).send("Username or password is incorrect!");
         }
 
-        bcrypt.compare(password, user.password).then((match) => {
-            if (!match)// if password do not match this will be false
-            {
-                res.status(400).json({ error: "username or password is wrong!" })
-            } else {
-                const accessToken = createToken(user) // Create the JWT token for the user
+        const match = await bcrypt.compare(password, user.password);
 
-                res.status(200).json({
-                    user: {
-                        user_id: user._id.toString(),
-                        firstName: user.firstName,
-                        lastName: user.lastName,
-                        email: user.email,
-                        accountType: user.accountType,
-                        country: user.country
-                    },
-                    JWT_Token: accessToken
+        if (!match) {
+            return res.status(400).json({ error: "Username or password is incorrect!" });
+        }
 
-                })
-            }
-        })
+        const accessToken = createToken(user); // Create the JWT token for the user
+
+        return res.status(200).json({
+            user: {
+                user_id: user._id.toString(),
+                firstName: user.firstName,
+                lastName: user.lastName,
+                email: user.email,
+                accountType: user.accountType,
+                country: user.country
+            },
+            JWT_Token: accessToken
+        });
 
     } catch (e) {
-        console.log(e)
-        res.status(500).send("server error! can't login user")
+        console.log(e);
+        return res.status(500).send("Server error! Can't login user.");
     }
-}
+};
 
 
 exports.validateUser = (req, res, next) => {
