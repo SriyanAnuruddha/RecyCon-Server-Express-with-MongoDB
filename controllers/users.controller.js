@@ -6,7 +6,7 @@ const { createToken } = require('../middleware/JWT')
 exports.registerUser = async (req, res, next) => {
 
     try {
-        const { firstName, lastName, email, country, city, password, accountType, coords } = req.body
+        const { firstName, lastName, email, country, password, accountType, coords } = req.body
 
         const user = await UserSchema.findOne({ 'email': email }) // get the user details 
         if (user) {
@@ -95,4 +95,69 @@ exports.validateUser = (req, res, next) => {
         email: req.email,
         accountType: req.accountType
     })
-} 
+}
+
+
+exports.getUserDetails = async (req, res, next) => {
+    try {
+        const user_id = req.user_id;
+
+        // Query the user by ID and select only the required fields
+        const user = await UserSchema.findById(user_id).select('firstName lastName email');
+
+        if (!user) {
+            return res.status(404).json({ error: "User not found!" });
+        }
+
+        // Respond with the user details
+        return res.status(200).json({
+            user: {
+                firstName: user.firstName,
+                lastName: user.lastName,
+                email: user.email
+            }
+        });
+
+    } catch (e) {
+        console.log(e);
+        return res.status(500).send({ error: "Server error! Can't fetch user details." });
+    }
+};
+
+
+exports.updateUserDetails = async (req, res, next) => {
+    try {
+        const { firstName, lastName, email } = req.body;
+        const user_id = req.user_id;
+
+        // Validate that the required fields are provided
+        if (!firstName || !lastName || !email) {
+            return res.status(400).json({ error: "First name, last name, and email are required!" });
+        }
+
+        // Find and update the user details
+        const updatedUser = await UserSchema.findByIdAndUpdate(
+            user_id,
+            { firstName, lastName, email },
+            { new: true, runValidators: true } // Return the updated user, and run Mongoose validation
+        ).select('firstName lastName email');
+
+        if (!updatedUser) {
+            return res.status(404).json({ error: "User not found!" });
+        }
+
+        // Respond with the updated user details
+        return res.status(200).json({
+            user: {
+                firstName: updatedUser.firstName,
+                lastName: updatedUser.lastName,
+                email: updatedUser.email
+            },
+            message: "User details updated successfully!"
+        });
+
+    } catch (e) {
+        console.log(e);
+        return res.status(500).send({ error: "Server error! Can't update user details." });
+    }
+};
